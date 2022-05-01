@@ -9,7 +9,6 @@ const mongoose = require('mongoose');
 const session = require('express-session');
 const MongoDBStore = require('connect-mongodb-session')(session);
 const csrf = require('csurf');
-const cors = require('cors');
 const flash = require('connect-flash');
 const multer = require('multer');
 
@@ -47,16 +46,13 @@ const authRoutes = require('./routes/auth');
 const taskRoutes = require('./routes/tasks')
 const adminRoutes = require('./routes/admin');
 
-app.use(cors({credentials: true, origin: true}));
-app.use(bodyParser.urlencoded({ extended: false }));
+
+
+app.use(bodyParser.urlencoded({ extended: false })); // allows us to grab info back from form elements via submission or url - Sam
+app.use(bodyParser.json()); // allows us to grab info back as json format - Sam
+
+
 app.use(cookieParser())
-
-app.use((req, res, next) => {
-  console.log(req.cookies);
-  console.log(req.body);
-  next();
-})
-
 app.use(multer({ storage: fileStorage, fileFilter: fileFilter }).single('image'));
 app.use('images', express.static(path.join(__dirname, 'images')));
 app.use(
@@ -94,6 +90,18 @@ app.use((req, res, next) => {
   }
 });
 
+
+// Middlewear here is utilized to fix cors errors that can occur between the client and the server with different domains - Sam
+app.use((req, res, next) => {
+  // used to fix cors error
+  res.setHeader('Access-Control-Allow-Origin', '*'); //Send header "Accesse-Control....." to everything when accessed (*) as a response
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE') // choose what methods to allow between client and server
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization'); // choose what headers the clients can send... could also use (*) wildcard for everything
+  next(); // tells middlewear to continue to next middlewear rather than stop
+});
+
+
+
 // Accessing routes
 app.use(authRoutes); // access auth routes
 app.use(adminRoutes); // access admin routes
@@ -103,14 +111,14 @@ app.get('/500', errorController.get500);
 
 app.use(errorController.get404);
 
-// app.use((error, req, res, next) => {
-//   res.status(500).json({
-//     pageTitle: 'Error!',
-//     path: '/500',
-//     isAuthenticated: req.session.isLoggedIn,
-//     isAdmin: req.session.isAdmin,
-//   });
-// });
+app.use((error, req, res, next) => {
+  res.status(500).json({
+    pageTitle: 'Error!',
+    path: '/500',
+    isAuthenticated: req.session.isLoggedIn,
+    isAdmin: req.session.isAdmin,
+  });
+});
 
 mongoose
   .connect(process.env.MONGODB_URI)

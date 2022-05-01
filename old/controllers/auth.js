@@ -105,7 +105,7 @@ exports.postLogin = (req, res, next) => {
             req.session.isAdmin = user.admin;
             return req.session.save(err => {
               console.log(err);
-              return res.json({success:true});
+              return res.redirect('/');
             });
           }
           return res.status(422).json({
@@ -122,7 +122,7 @@ exports.postLogin = (req, res, next) => {
         })
         .catch(err => {
           console.log(err);
-          res.json({success:false});
+          res.redirect('/login');
         });
     })
     .catch(err => {
